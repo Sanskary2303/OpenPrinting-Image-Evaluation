@@ -66,7 +66,7 @@ main() {
             python3 "$PYTHON_SCRIPT" --temp-files
             ;;
         full)
-            confirm_action "This will clean temporary files, test documents, and CUPS output (keeping reports)."
+            confirm_action "This will clean temporary files, test documents, test results, and CUPS output (keeping reports)."
             python3 "$PYTHON_SCRIPT" --all --keep-reports
             ;;
         all)
@@ -88,6 +88,7 @@ main() {
         check)
             echo -e "${BLUE}Checking workspace...${NC}"
             echo -e "Test documents directory: ${YELLOW}$(find test_documents -type f 2>/dev/null | wc -l)${NC} files"
+            echo -e "Test results directory: ${YELLOW}$(find test_results -type f 2>/dev/null | wc -l)${NC} files"
             echo -e "Temporary files: ${YELLOW}$(find . -maxdepth 1 -name "*.png" -o -name "*.pdf" | wc -l)${NC} files"
             echo -e "CUPS output: ${YELLOW}$(find PDF -type f 2>/dev/null | wc -l)${NC} files"
             echo -e "\nRun with another option to clean files."

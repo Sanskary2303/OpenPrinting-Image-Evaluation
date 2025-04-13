@@ -6,7 +6,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Image
 import os
-import random
+import math
 
 FONTS = ['Helvetica', 'Courier', 'Times-Roman']
 try:
@@ -280,6 +280,125 @@ def create_complex_layout_pdf(filename):
     
     c.showPage()
     c.save()
+    return filename
+
+def create_multipage_document(filename, pages=5, reorder=False):
+    """Create a PDF with multiple pages with page numbers and markers for testing page order
+    
+    Parameters:
+    - filename: Output PDF file path
+    - pages: Number of pages to generate
+    - reorder: If True, reorder pages in a predictable way to test detection
+    """
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    import math
+    
+    c = canvas.Canvas(filename, pagesize=letter)
+    width, height = letter
+    
+    page_order = list(range(pages))
+    if reorder and pages > 2:
+        page_order[1], page_order[2] = page_order[2], page_order[1]
+        
+        if pages > 3:
+            last_idx = pages - 1
+            middle_idx = pages // 2
+            page_order[last_idx], page_order[middle_idx] = page_order[middle_idx], page_order[last_idx]
+    
+    for i in range(pages):
+        page_idx = page_order[i]
+        
+        c.setFont('Helvetica-Bold', 36)
+        c.drawString(72, height - 72, f"Page {page_idx + 1} of {pages}")
+        
+        c.setFont('Helvetica', 10)
+        c.drawString(36, height - 36, f"P{page_idx + 1}")  # Top left
+        c.drawString(width - 72, height - 36, f"P{page_idx + 1}")  # Top right
+        c.drawString(36, 36, f"P{page_idx + 1}")  # Bottom left
+        c.drawString(width - 72, 36, f"P{page_idx + 1}")  # Bottom right
+        
+        c.setFillColorRGB(0.1 * page_idx, 0.1 * ((pages - page_idx) % pages), 0.5)
+        
+        shape_size = 2 * inch
+        center_x = width / 2
+        center_y = height / 2
+        
+        if page_idx % 5 == 0:
+            c.circle(center_x, center_y, shape_size/2, fill=1)
+        elif page_idx % 5 == 1:
+            c.rect(center_x - shape_size/2, center_y - shape_size/2, 
+                  shape_size, shape_size, fill=1)
+        elif page_idx % 5 == 2:
+            c.setFillColorRGB(0.1 * page_idx, 0.1 * ((pages - page_idx) % pages), 0.5)
+            
+            p = c.beginPath()
+            p.moveTo(center_x, center_y + shape_size/2)
+            p.lineTo(center_x - shape_size/2, center_y - shape_size/2)
+            p.lineTo(center_x + shape_size/2, center_y - shape_size/2)
+            p.close()
+            c.drawPath(p, fill=1)
+            
+        elif page_idx % 5 == 3:
+            points = 5
+            c.setFillColorRGB(0.1 * page_idx, 0.1 * ((pages - page_idx) % pages), 0.5)
+            radius_outer = shape_size/2
+            radius_inner = radius_outer * 0.4
+            angle = math.pi / points
+            
+            p = c.beginPath()
+            for i in range(2*points):
+                radius = radius_outer if i % 2 == 0 else radius_inner
+                x = center_x + radius * math.sin(i * angle)
+                y = center_y + radius * math.cos(i * angle)
+                if i == 0:
+                    p.moveTo(x, y)
+                else:
+                    p.lineTo(x, y)
+            p.close()
+            c.drawPath(p, fill=1)
+            
+        else:
+            c.setFillColorRGB(0.1 * page_idx, 0.1 * ((pages - page_idx) % pages), 0.5)
+            
+            p = c.beginPath()
+            p.moveTo(center_x, center_y + shape_size/2)
+            p.lineTo(center_x + shape_size/2, center_y)
+            p.lineTo(center_x, center_y - shape_size/2)
+            p.lineTo(center_x - shape_size/2, center_y)
+            p.close()
+            c.drawPath(p, fill=1)
+        
+        c.setFillColorRGB(1, 1, 1)
+        c.setFont('Helvetica-Bold', 72)
+        text_width = c.stringWidth(str(page_idx + 1), 'Helvetica-Bold', 72)
+        c.drawString(center_x - text_width/2, center_y - 24, str(page_idx + 1))
+        
+        bar_width = width * (page_idx + 1) / (pages * 2)
+        c.setFillColorRGB(0, 0, 0)
+        c.rect(72, 72, bar_width, 20, fill=1)
+        
+        # QR code like pattern unique to page number for easier detection
+        cell_size = 10
+        grid_dim = 5
+        x_offset = width - 72 - (grid_dim * cell_size)
+        y_offset = 72
+        
+        for gx in range(grid_dim):
+            for gy in range(grid_dim):
+                if ((gx + gy * grid_dim) + page_idx) % 2 == 0:
+                    c.setFillColorRGB(0, 0, 0)
+                    c.rect(x_offset + gx*cell_size, 
+                          y_offset + gy*cell_size, 
+                          cell_size, cell_size, fill=1)
+        
+        c.showPage()
+    
+    c.save()
+    
+    print(f"Created {pages}-page document at {filename}")
     return filename
 
 def generate_all_test_documents(output_dir='.'):

@@ -16,6 +16,14 @@ The system supports extensive testing with various document types including text
     - Edge detection and comparison
     - Color fidelity analysis with histogram comparison and Delta-E metrics
     - Visual difference heatmaps
+    - Edge quality analysis with multi-scale edge detection
+
+- **Page Integrity Verification**
+    - Multi-page document processing
+    - Page completeness verification
+    - Page order validation
+    - Missing and duplicate page detection
+    - Page-by-page quality comparison
 
 - **Text Preservation Testing**
     - OCR-based text extraction
@@ -28,12 +36,14 @@ The system supports extensive testing with various document types including text
     - Pure image documents
     - Mixed content (text and images)
     - Complex layouts with tables and columns
+    - Multi-page documents with orientation variations
 
 - **Detailed Reporting**
     - HTML reports with visual comparisons
     - CSV summary files
     - JSON result data for each test
     - Pass/fail determination based on customizable thresholds
+    - Visual page integrity maps for multi-page documents
 
 ## Components
 
@@ -41,12 +51,13 @@ The system supports extensive testing with various document types including text
 
 - **`test_pipeline.py`**: Basic single-document test pipeline
 - **`test_document_pipeline.py`**: Comprehensive testing with multiple document types
+- **`multipage_test.py`**: Multi-page document testing with page integrity verification
 - **`enhanced_comparison.py`**: Advanced image comparison techniques
 
 ### Document Generation
 
 - **`generate_pdf.py`**: Simple PDF generation for basic tests
-- **`generate_test_documents.py`**: Creates a variety of test documents
+- **`generate_test_documents.py`**: Creates a variety of test documents including multi-page with page markers
 
 ### Utilities
 
@@ -58,7 +69,7 @@ The system supports extensive testing with various document types including text
 ## Installation Requirements
 
 ```bash
-pip install reportlab pillow opencv-python scikit-image pytesseract pandas colormath matplotlib diffoscope
+pip install reportlab pillow opencv-python scikit-image pytesseract pandas colormath matplotlib diffoscope PyMuPDF
 ```
 
 Additionally, ensure you have the following system packages:
@@ -99,6 +110,22 @@ This will:
 3. Perform detailed comparison of each document
 4. Generate an HTML report with results
 
+### Multi-page Document Testing
+
+For testing multi-page documents with page integrity verification:
+
+```bash
+python multipage_test.py
+```
+
+This will:
+
+1. Generate multi-page test documents
+2. Process documents through the print pipeline
+3. Extract and compare individual pages
+4. Check for missing or reordered pages
+5. Generate visualizations of page mapping and quality metrics
+
 ### Workspace Cleanup
 
 After testing, clean up your workspace:
@@ -115,17 +142,20 @@ After testing, clean up your workspace:
 # Direct Python usage
 python clean_workspace.py --temp-files --keep-reports
 ```
+
 ## Customization
 
 - Adjust quality thresholds in the test scripts
 - Modify document generation in [`generate_test_documents.py`](generate_test_documents.py)
 - Add new comparison techniques in [`enhanced_comparison.py`](enhanced_comparison.py)
+- Update page integrity detection parameters in the [`page_integrity_comparison`](enhanced_comparison.py) method
 
 ## Structure
 
 ```
 ├── test_pipeline.py            # Basic testing pipeline
 ├── test_document_pipeline.py   # Comprehensive testing
+├── multipage_test.py           # Multi-page document testing
 ├── enhanced_comparison.py      # Advanced image comparison
 ├── generate_pdf.py             # Basic PDF generation
 ├── generate_test_documents.py  # Test document creation
@@ -139,10 +169,35 @@ python clean_workspace.py --temp-files --keep-reports
     ├── *.png                   # Rendered images
     ├── *_results.json          # Individual test results
     ├── test_summary.csv        # Results summary
-    └── test_report.html        # Visual HTML report
+    ├── test_report.html        # Visual HTML report
+    └── multipage/              # Multi-page test results
+        ├── complete_doc/       # Complete document results
+        ├── reordered/          # Reordered page tests
+        └── missing/            # Missing page tests
 ```
+
+## Major Features
+
+### Edge Quality Analysis
+
+The edge quality analysis uses multi-scale edge detection to evaluate how well fine details and contours are preserved in the printing process. This helps identify issues with:
+
+- Loss of fine details
+- Edge blurring or sharpening
+- Contour discontinuities
+- Line width variations
+
+### Page Integrity Analysis
+
+The page integrity verification system analyzes multi-page documents to detect common errors:
+
+- Missing pages
+- Duplicated pages
+- Reordered pages
+- Page orientation errors
+
+The system uses feature matching to identify corresponding pages regardless of minor distortions and generates visualizations showing page mapping between reference and processed documents.
 
 ## Credits
 
-Credits
-This project builds on work from the GNOME openQA project and uses free software components including OpenCV, diffoscope, and others for image comparison and analysis.
+This project builds on work from the GNOME openQA project and uses free software components including OpenCV, diffoscope, PyMuPDF, and others for image comparison and analysis.
