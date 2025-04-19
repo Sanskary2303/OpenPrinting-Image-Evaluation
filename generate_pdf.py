@@ -8,4 +8,3 @@ def create_pdf(file_name):
     c.save()
 
 create_pdf("sample.pdf")
-

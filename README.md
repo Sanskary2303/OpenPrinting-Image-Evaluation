@@ -53,6 +53,7 @@ The system supports extensive testing with various document types including text
 - **`test_document_pipeline.py`**: Comprehensive testing with multiple document types
 - **`multipage_test.py`**: Multi-page document testing with page integrity verification
 - **`enhanced_comparison.py`**: Advanced image comparison techniques
+- **`printer_info.py`**: CUPS filter chain analysis and execution
 
 ### Document Generation
 
@@ -77,6 +78,7 @@ Additionally, ensure you have the following system packages:
 - Ghostscript (for PDF to image conversion)
 - CUPS (for print processing)
 - Tesseract OCR (for text extraction)
+- cups-filters (for accessing CUPS filter components)
 
 ## Usage
 
@@ -126,6 +128,28 @@ This will:
 4. Check for missing or reordered pages
 5. Generate visualizations of page mapping and quality metrics
 
+### Filter Chain Analysis and Testing
+
+To analyze and test CUPS filter chains:
+
+```bash
+python3
+>>> from printer_info import get_filter_chain, run_cups_filter_chain, get_comprehensive_printer_info
+>>> printers = get_available_printers()
+>>> printer_name = printers[0]
+>>> get_comprehensive_printer_info(printer_name)  # View detailed printer information
+>>> filter_chain = get_filter_chain(printer_name, input_mime_type='application/pdf')  # Identify filter chain
+>>> print(filter_chain)
+>>> # Test a filter chain with direct execution:
+>>> run_cups_filter_chain(
+...     printer_name=printer_name, 
+...     input_file_path="sample.pdf", 
+...     output_file_path="output_raster.data",
+...     custom_filters=['pdftopdf', 'pdftoraster'],
+...     filter_options={'pdftoraster': 'ColorModel=RGB Resolution=300'}
+... )
+```
+
 ### Workspace Cleanup
 
 After testing, clean up your workspace:
@@ -163,6 +187,7 @@ python clean_workspace.py --temp-files --keep-reports
 ├── compare_image.py            # Basic image comparison
 ├── clean_workspace.py          # Cleanup utility
 ├── cleanup.sh                  # Shell wrapper for cleanup
+├── printer_info.py             # CUPS filter chain analysis and testing
 ├── PDF/                        # Output directory for CUPS
 └── test_documents/             # Generated during testing
     ├── *.pdf                   # Test documents
@@ -197,6 +222,16 @@ The page integrity verification system analyzes multi-page documents to detect c
 - Page orientation errors
 
 The system uses feature matching to identify corresponding pages regardless of minor distortions and generates visualizations showing page mapping between reference and processed documents.
+
+### Filter Chain Analysis
+
+The filter chain analysis system provides a way to inspect, understand, and test the exact sequence of filters that CUPS would use for a specific printer and document type:
+
+- **Filter Chain Detection**: Query the filters that would be used based on printer PPD configurations
+- **Direct Filter Execution**: Manually control and test specific filter sequences for precise debugging
+- **Troubleshooting Tools**: Compare output from different filters to isolate issues in complex print pipelines
+- **Printer Information Collection**: Gather comprehensive details about available printers and their capabilities
+- **PPD Analysis**: Extract filter information directly from printer PPD files when needed
 
 ## Credits
 
