@@ -132,9 +132,8 @@ This will:
 
 To analyze and test CUPS filter chains:
 
-```bash
-python3
->>> from printer_info import get_filter_chain, run_cups_filter_chain, get_comprehensive_printer_info
+```python3
+>>> from printer_info import get_filter_chain, run_cups_filter_chain, get_comprehensive_printer_info, get_available_printers
 >>> printers = get_available_printers()
 >>> printer_name = printers[0]
 >>> get_comprehensive_printer_info(printer_name)  # View detailed printer information
