@@ -434,8 +434,97 @@ def generate_all_test_documents(output_dir='.'):
     
     return test_files
 
+def create_test_pdf(output_path):
+    """Create a test PDF document with various elements"""
+    c = canvas.Canvas(output_path, pagesize=A4)
+    width, height = A4
+    
+    # Add title
+    c.setFont("Helvetica-Bold", 24)
+    c.drawString(inch, height - inch, "CUPS Filter Test Document")
+    
+    # Add some text
+    c.setFont("Helvetica", 12)
+    c.drawString(inch, height - 2*inch, "This is a test document to validate CUPS filter chains.")
+    c.drawString(inch, height - 2.5*inch, "It contains text, graphics, and various elements.")
+    
+    # Add a rectangle
+    c.setStrokeColor(colors.blue)
+    c.setFillColor(colors.lightblue)
+    c.rect(inch, height - 4*inch, 2*inch, inch, fill=1)
+    
+    # Add a circle
+    c.setStrokeColor(colors.red)
+    c.setFillColor(colors.pink)
+    c.circle(4*inch, height - 3.5*inch, 0.5*inch, fill=1)
+    
+    # Add page number
+    c.setFont("Helvetica", 10)
+    c.drawString(width/2, 0.5*inch, "Page 1")
+    
+    # Save the PDF
+    c.save()
+
+def create_text_file(output_path):
+    """Create a test text file"""
+    with open(output_path, 'w') as f:
+        f.write("CUPS Filter Test Document\n")
+        f.write("=========================\n\n")
+        f.write("This is a simple text file to test CUPS text filters.\n")
+        f.write("It contains multiple lines of plain text.\n\n")
+        f.write("The text/plain MIME type is typically processed by texttopdf.\n")
+        f.write("This filter converts text to PDF before further processing.\n")
+
+def create_postscript_file(output_path):
+    """Create a simple PostScript file"""
+    ps_content = """%!PS-Adobe-3.0
+%%Title: CUPS Filter Test Document
+%%Creator: generate_test_documents.py
+%%Pages: 1
+%%DocumentData: Clean7Bit
+%%Orientation: Portrait
+%%PageOrder: Ascend
+%%BoundingBox: 0 0 596 842
+%%EndComments
+%%BeginProlog
+%%EndProlog
+%%Page: 1 1
+/Helvetica findfont 24 scalefont setfont
+72 770 moveto
+(CUPS Filter Test Document) show
+/Helvetica findfont 12 scalefont setfont
+72 720 moveto
+(This is a test PostScript document.) show
+72 700 moveto
+(It will be processed by PostScript filters in CUPS.) show
+stroke
+showpage
+%%EOF
+"""
+    with open(output_path, 'w') as f:
+        f.write(ps_content)
+
+def create_test_documents(output_dir):
+    """Create test documents of various MIME types"""
+    # Create PDF
+    create_test_pdf(os.path.join(output_dir, "test.pdf"))
+    
+    # Create text file
+    create_text_file(os.path.join(output_dir, "test.txt"))
+    
+    # Create PostScript file
+    create_postscript_file(os.path.join(output_dir, "test.ps"))
+    
+    # For JPEG, we would typically need an image library
+    # Here we're just noting that you might want to add one
+    print("Note: Add a sample JPEG file manually to test image/jpeg filters")
+
 if __name__ == "__main__":
-    test_files = generate_all_test_documents()
-    print(f"Generated {len(test_files)} test documents:")
-    for file in test_files:
-        print(f"  - {file}")
+    # test_files = generate_all_test_documents()
+    # print(f"Generated {len(test_files)} test documents:")
+    # for file in test_files:
+    #     print(f"  - {file}")
+    output_dir = "test_files"
+    os.makedirs(output_dir, exist_ok=True)
+    create_test_documents(output_dir)
+    print(f"Test documents created in {output_dir}/")
