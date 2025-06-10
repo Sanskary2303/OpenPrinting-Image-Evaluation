@@ -81,34 +81,38 @@ def get_printer_details_with_pycups() -> Dict[str, Dict[str, str]]:
         return {}
     
 def get_printer_ppd_info(printer_name: str) -> Dict[str, Union[str, List[str]]]:
-    """Get detailed information from a printer's PPD file."""
+    """Get detailed information from a printer's PPD using pycups."""
     try:
-        ppd_path = f"/etc/cups/ppd/{printer_name}.ppd"
+        import cups
+        conn = cups.Connection()
         
-        if not os.path.exists(ppd_path):
-            ppd_path_output = subprocess.check_output(['cups-config', '--datadir'], text=True).strip()
-            ppd_path = f"{ppd_path_output}/model/{printer_name}.ppd"
-        
-        if os.path.exists(ppd_path):
-            with open(ppd_path, 'r') as f:
-                content = f.read()
-                
-            filter_info = {}
-            
-            filter_matches = re.findall(r'\*cupsFilter2?:\s*"([^"]+)"', content)
-            if filter_matches:
-                filter_info["filters"] = filter_matches
-            
-            model_match = re.search(r'\*ModelName:\s*"([^"]+)"', content)
-            if model_match:
-                filter_info["model"] = model_match.group(1)
-                
-            return filter_info
-        else:
-            print(f"PPD file for printer {printer_name} not found.")
+        ppd_filename = conn.getPPD(printer_name)
+        if not ppd_filename:
+            print(f"Could not retrieve PPD for printer {printer_name}")
             return {}
+            
+        filter_info = {}
+        
+        with open(ppd_filename, 'r') as f:
+            content = f.read()
+            
+        os.unlink(ppd_filename)
+        
+        filter_matches = re.findall(r'\*cupsFilter2?:\s*"([^"]+)"', content)
+        if filter_matches:
+            filter_info["filters"] = filter_matches
+        
+        model_match = re.search(r'\*ModelName:\s*"([^"]+)"', content)
+        if model_match:
+            filter_info["model"] = model_match.group(1)
+            
+        return filter_info
+        
+    except ImportError:
+        print("pycups library not installed. Cannot retrieve PPD information.")
+        return {}
     except Exception as e:
-        print(f"Error retrieving PPD information: {e}")
+        print(f"Error retrieving PPD information with pycups: {e}")
         return {}
 
 def get_available_printers() -> List[str]:
@@ -124,25 +128,37 @@ def get_available_printers() -> List[str]:
         return []
 
 def get_printer_model(printer_name: str) -> str:
-    """Get the model information for a specific printer."""
+    """Get the model information for a specific printer using pycups."""
     try:
-        output = subprocess.check_output(['lpoptions', '-p', printer_name, '-l'], text=True)
-        for line in output.splitlines():
-            if "make-and-model" in line.lower():
-                return line.split(':')[1].strip()
+        import cups
+        conn = cups.Connection()
         
-        ppd_path = f"/etc/cups/ppd/{printer_name}.ppd"
-        if os.path.exists(ppd_path):
-            with open(ppd_path, 'r') as f:
-                content = f.read()
-                model_match = re.search(r'\*ModelName:\s*"([^"]+)"', content)
-                if model_match:
-                    return model_match.group(1)
-                
-        return "Unknown model"
+        printers = conn.getPrinters()
+        if printer_name in printers:
+            model = printers[printer_name].get('printer-make-and-model', 'Unknown')
+            return model
+        
+        try:
+            attributes = conn.getPrinterAttributes(printer_name)
+            model = attributes.get('printer-make-and-model', 'Unknown')
+            return model
+        except cups.IPPError:
+            return "Printer not found"
+            
+    except ImportError:
+        print("Warning: pycups library not installed. Falling back to lpoptions...")
+        try:
+            output = subprocess.check_output(['lpoptions', '-p', printer_name, '-l'], text=True)
+            for line in output.splitlines():
+                if "make-and-model" in line.lower():
+                    return line.split(':')[1].strip()
+        except Exception as e:
+            print(f"Error with lpoptions fallback: {e}")
+            
     except Exception as e:
-        print(f"Error getting printer model: {e}")
-        return "Error retrieving model"
+        print(f"Error getting printer model with pycups: {e}")
+        
+    return "Unknown model"
 
 def get_filter_chain(printer_name: str, input_mime_type: str = 'application/pdf') -> List[str]:
     """Get the filter chain CUPS would likely use for a printer and input type."""
@@ -324,30 +340,20 @@ def get_comprehensive_printer_info(printer_name: str) -> str:
         info.append("Type: Physical Printer\n")
     
     # 3. Get filter information from PPD
-    ppd_path = f"/etc/cups/ppd/{printer_name}.ppd"
-    if os.path.exists(ppd_path):
-        info.append(f"PPD File: {ppd_path}")
-        try:
-            with open(ppd_path, 'r') as f:
-                content = f.read()
-            
-            filter_matches = re.findall(r'\*cupsFilter2?:\s*"([^"]+)"', content)
-            if filter_matches:
-                info.append("\nFilter Chain from PPD:")
-                for f in filter_matches:
-                    info.append(f"  {f}")
-            
-            language_match = re.search(r'\*LanguageLevel:\s*"(\d+)"', content)
-            if language_match:
-                info.append(f"\nPostScript Language Level: {language_match.group(1)}")
-                
-            color_match = re.search(r'\*ColorDevice:\s*(True|False)', content)
-            if color_match:
-                info.append(f"Color Device: {color_match.group(1)}")
-        except Exception as e:
-            info.append(f"Error reading PPD file: {e}")
+    ppd_info = get_printer_ppd_info(printer_name)
+    if ppd_info:
+        if "model" in ppd_info:
+            info.append(f"PPD Model Name: {ppd_info['model']}")
+        
+        if "filters" in ppd_info:
+            info.append("\nFilter Chain from PPD:")
+            for f in ppd_info["filters"]:
+                info.append(f"  {f}")
+        else:
+            info.append("\nNo cupsFilter directives found in PPD")
     else:
-        info.append("No PPD file found. This might be a driverless printer.")
+        info.append("No PPD file available or accessible. This might be a driverless printer.")
+        
     
     # 4. Try to get CUPS filter chain information for PDF input
     info.append("\nAttempting to determine CUPS processing path for PDF input:")
