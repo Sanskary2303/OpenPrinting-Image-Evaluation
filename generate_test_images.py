@@ -12,7 +12,7 @@ class ComprehensiveTestImageGenerator:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         
-        # Standard dimensions (A4 at 300 DPI equivalent)
+        # Standard dimensions (A4 at 300 DPI)
         self.width = 2550
         self.height = 3508
     
@@ -26,7 +26,7 @@ class ComprehensiveTestImageGenerator:
             cv2.line(img, (x, 0), (x, self.height), 0, 2)
         patterns['vertical_grid'] = img
         
-        # 2. Horizontal Grid Pattern  
+        # 2. Horizontal Grid Pattern
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
         for y in range(0, self.height, 20):  # Horizontal lines every 20 pixels
             cv2.line(img, (0, y), (self.width, y), 0, 2)
@@ -43,7 +43,6 @@ class ComprehensiveTestImageGenerator:
         # 4. Diagonal Grid Pattern (45 degrees)
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
         spacing = 30
-        # Draw diagonal lines from top-left to bottom-right
         for offset in range(-self.height, self.width, spacing):
             start_x = max(0, offset)
             start_y = max(0, -offset)
@@ -54,7 +53,6 @@ class ComprehensiveTestImageGenerator:
         
         # 5. Diagonal Grid Pattern (-45 degrees)
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
-        # Draw diagonal lines from top-right to bottom-left
         for offset in range(0, self.width + self.height, spacing):
             start_x = min(self.width, offset)
             start_y = max(0, offset - self.width)
@@ -85,7 +83,6 @@ class ComprehensiveTestImageGenerator:
         # 7. Variable Density Grid
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
         for y in range(0, self.height, 20):
-            # Density increases from left to right
             density = int(20 * (1 - y / self.height) + 5)
             for x in range(0, self.width, density):
                 cv2.line(img, (x, y), (x, y + 10), 0, 1)
@@ -100,7 +97,6 @@ class ComprehensiveTestImageGenerator:
             end_x = int(center_x + 1000 * math.cos(angle))
             end_y = int(center_y + 1000 * math.sin(angle))
             cv2.line(img, (center_x, center_y), (end_x, end_y), 0, 1)
-        # Add concentric circles
         for radius in range(50, 800, 50):
             cv2.circle(img, (center_x, center_y), radius, 0, 1)
         patterns['radial_grid'] = img
@@ -115,23 +111,19 @@ class ComprehensiveTestImageGenerator:
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
         for y in range(50, self.height - 50, 25):
             for x in range(50, self.width - 200, 180):
-                # Simulate text blocks
                 cv2.rectangle(img, (x, y), (x + 150, y + 20), 0, -1)
-                # Add spacing between words
                 for word_x in range(x + 10, x + 140, 30):
                     cv2.rectangle(img, (word_x, y + 3), (word_x + 20, y + 17), 255, -1)
         patterns['high_density_text'] = img
         
         # 2. Medium Density Mixed Content
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
-        # Add text blocks with more spacing
         for y in range(100, self.height - 100, 80):
             for x in range(100, self.width - 300, 300):
                 cv2.rectangle(img, (x, y), (x + 200, y + 30), 0, -1)
-                # Add breaks in text
                 for break_x in range(x + 30, x + 170, 40):
                     cv2.rectangle(img, (break_x, y + 5), (break_x + 20, y + 25), 255, -1)
-        # Add some geometric elements
+        # geometric elements
         for i, y in enumerate(range(200, self.height - 200, 400)):
             x = 200 + (i % 3) * 600
             cv2.rectangle(img, (x, y), (x + 150, y + 150), 0, 2)
@@ -140,11 +132,10 @@ class ComprehensiveTestImageGenerator:
         
         # 3. Low Density Sparse Content
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
-        # Sparse text
         for y in range(200, self.height - 200, 200):
             for x in range(200, self.width - 400, 600):
                 cv2.rectangle(img, (x, y), (x + 150, y + 25), 0, -1)
-        # Few geometric shapes
+        # geometric shapes
         cv2.rectangle(img, (self.width//2 - 100, self.height//2 - 100), 
                      (self.width//2 + 100, self.height//2 + 100), 0, 3)
         cv2.circle(img, (self.width//4, self.height//4), 80, 0, 3)
@@ -162,10 +153,9 @@ class ComprehensiveTestImageGenerator:
         
         # 5. Clustered Density Pattern
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
-        # Create dense clusters
         cluster_centers = [(400, 400), (1200, 800), (800, 1600), (1800, 2000), (600, 2800)]
         for cx, cy in cluster_centers:
-            for i in range(50):  # 50 elements per cluster
+            for i in range(50):
                 angle = 2 * math.pi * i / 50
                 radius = np.random.normal(80, 30)
                 x = int(cx + radius * math.cos(angle))
@@ -181,13 +171,13 @@ class ComprehensiveTestImageGenerator:
         """Create patterns specifically for rotation detection testing"""
         patterns = {}
         
-        # 1. Horizontal Lines Pattern (0 degrees)
+        # 1. Horizontal Lines Pattern
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
         for y in range(100, self.height - 100, 40):
             cv2.line(img, (100, y), (self.width - 100, y), 0, 3)
         patterns['horizontal_lines'] = img
         
-        # 2. Vertical Lines Pattern (90 degrees)
+        # 2. Vertical Lines Pattern
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
         for x in range(100, self.width - 100, 40):
             cv2.line(img, (x, 100), (x, self.height - 100), 0, 3)
@@ -221,10 +211,8 @@ class ComprehensiveTestImageGenerator:
         # 5. Text-like Horizontal Pattern
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
         for y in range(150, self.height - 150, 50):
-            # Simulate text lines
             for x in range(100, self.width - 200, 200):
                 cv2.rectangle(img, (x, y), (x + 150, y + 20), 0, -1)
-                # Add word breaks
                 for break_x in range(x + 30, x + 120, 30):
                     cv2.rectangle(img, (break_x, y + 3), (break_x + 15, y + 17), 255, -1)
         patterns['text_horizontal'] = img
@@ -408,7 +396,7 @@ class ComprehensiveTestImageGenerator:
         
         # 3. Distorted Shapes Pattern
         img = np.ones((self.height, self.width), dtype=np.uint8) * 255
-        # Create slightly distorted rectangles
+        # slightly distorted rectangles
         points1 = np.array([[200, 200], [600, 210], [590, 500], [190, 490]], np.int32)
         points2 = np.array([[800, 300], [1200, 290], [1210, 600], [810, 610]], np.int32)
         cv2.polylines(img, [points1, points2], True, 0, 3)
@@ -421,7 +409,7 @@ class ComprehensiveTestImageGenerator:
         cv2.circle(img, (600, 200), 100, 0, 3)
         triangle = np.array([[800, 100], [900, 300], [700, 300]], np.int32)
         cv2.polylines(img, [triangle], True, 0, 3)
-        # Add an ellipse
+        # ellipse
         cv2.ellipse(img, (1200, 200), (150, 100), 0, 0, 360, 0, 3)
         patterns['mixed_geometric'] = img
         
@@ -445,7 +433,6 @@ class ComprehensiveTestImageGenerator:
         
         all_patterns = {}
         
-        # Generate all pattern types
         all_patterns.update(self.create_grid_patterns())
         all_patterns.update(self.create_density_patterns())
         all_patterns.update(self.create_rotation_test_patterns())
@@ -454,7 +441,6 @@ class ComprehensiveTestImageGenerator:
         all_patterns.update(self.create_color_test_patterns())
         all_patterns.update(self.create_geometric_test_patterns())
         
-        # Save all patterns
         generated_files = []
         for pattern_name, pattern_image in all_patterns.items():
             filename = f"{pattern_name}.png"
@@ -463,7 +449,6 @@ class ComprehensiveTestImageGenerator:
             generated_files.append(filepath)
             print(f"Created: {filename}")
         
-        # Create a summary of what was generated
         self.create_test_suite_summary(all_patterns)
         
         return generated_files
@@ -532,13 +517,10 @@ class ComprehensiveTestImageGenerator:
         
         print(f"Summary saved to: {summary_path}")
 
-
-# Legacy compatibility function
 def generate_from_existing_image(input_path, output_dir="derived_test_images"):
     """Generate DPI variants from an existing high-quality image"""
     os.makedirs(output_dir, exist_ok=True)
     
-    # Load original image
     img = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
         print(f"Could not load image: {input_path}")
@@ -566,16 +548,13 @@ def generate_from_existing_image(input_path, output_dir="derived_test_images"):
     print(f"Generated DPI variants in {output_dir}")
     return [original_path, path_300, path_150]
 
-
 if __name__ == "__main__":
-    # Generate comprehensive test suite
     generator = ComprehensiveTestImageGenerator()
     test_images = generator.generate_comprehensive_test_suite()
     
     print(f"\nGenerated {len(test_images)} test images in '{generator.output_dir}'")
     print("Check 'test_suite_summary.txt' for details on each pattern type.")
     
-    # If you have existing images, generate variants from them
     existing_images = ["600dpi.png", "300dpi.png", "150dpi.png"]
     for img_path in existing_images:
         if os.path.exists(img_path):
