@@ -53,6 +53,8 @@ The system supports extensive testing with various document types including text
 - **`test_pipeline.py`**: Basic single-document test pipeline
 - **`test_document_pipeline.py`**: Comprehensive testing with multiple document types
 - **`multipage_test.py`**: Multi-page document testing with page integrity verification
+- **`print_quality_pipeline.py`**: Complete end-to-end print quality testing pipeline
+- **`filter_chain_test_pipeline.py`**: Isolated CUPS filter chain correctness testing
 - **`enhanced_comparison.py`**: Advanced image comparison techniques
 - **`printer_info.py`**: CUPS filter chain analysis and execution
 
@@ -98,6 +100,65 @@ This will:
 3. Compare the original and processed versions
 4. Display similarity metrics
 5. Extract and compare text
+
+### Comprehensive Print Quality Testing
+
+For complete end-to-end print quality assessment:
+
+```bash
+python print_quality_pipeline.py
+```
+
+This comprehensive pipeline will:
+
+1. **Automatic Printer Detection**: Discover available CUPS printers and their capabilities
+2. **Test Document Generation**: Create diverse test images with various characteristics (text, images, patterns, colors)
+3. **Filter Chain Analysis**: Analyze and display the complete CUPS filter chain for each printer
+4. **Automated Processing**: Process all test documents through each detected printer
+5. **Advanced Comparison**: Apply comprehensive image analysis algorithms including:
+   - SSIM and feature matching
+   - Edge quality analysis
+   - Color fidelity assessment
+   - Density and texture analysis
+   - Rotation and geometric distortion detection
+   - Noise analysis
+6. **Detailed Reporting**: Generate HTML reports with visual comparisons and quantitative metrics
+7. **Quality Scoring**: Provide overall quality scores and pass/fail determinations
+
+**Use Cases**: 
+- Production print quality validation
+- Printer performance benchmarking
+- Comprehensive quality assurance testing
+- Print system validation across multiple printers
+
+### Filter Chain Correctness Testing
+
+For testing CUPS filter chain correctness without physical printing:
+
+```bash
+python filter_chain_test_pipeline.py
+```
+
+This specialized pipeline will:
+
+1. **Filter Chain Isolation**: Test CUPS filter processing independent of physical hardware
+2. **Systematic Test Image Generation**: Create targeted test images for specific filter scenarios:
+   - Pure text documents
+   - High-resolution images
+   - Color and grayscale content
+   - Various DPI settings
+   - Complex layouts
+3. **Direct Filter Processing**: Process images through CUPS filters without physical printing
+4. **Digital Comparison**: Compare filter outputs using pixel-perfect analysis
+5. **Filter-Specific Validation**: Identify issues specific to individual filters in the chain
+6. **Regression Testing**: Detect filter processing changes between CUPS versions
+
+**Use Cases**:
+- CUPS filter development and debugging
+- Filter chain regression testing
+- Digital print processing validation
+- Isolating software issues from hardware problems
+- CI/CD integration for CUPS testing
 
 ### Comprehensive Testing
 
@@ -188,6 +249,44 @@ After testing, clean up your workspace:
 python clean_workspace.py --temp-files --keep-reports
 ```
 
+## Pipeline Comparison Guide
+
+### When to Use `print_quality_pipeline.py`
+
+**Best for:**
+- Production print quality validation
+- Testing complete printing systems (software + hardware)
+- Benchmarking printer performance
+- Real-world print quality assessment
+- Testing with physical printers and scanners
+
+**What it tests:**
+- Complete print-to-paper-to-scan workflow
+- Hardware-specific rendering quality
+- Paper and ink interactions
+- Scanner quality and calibration
+- End-to-end system performance
+
+**Output:** Physical print quality metrics with real-world variability
+
+### When to Use `filter_chain_test_pipeline.py`
+
+**Best for:**
+- CUPS filter development and debugging
+- Software-only testing without hardware dependencies
+- Regression testing for CUPS updates
+- CI/CD integration
+- Isolating filter chain issues from hardware problems
+
+**What it tests:**
+- Pure digital filter processing accuracy
+- CUPS software pipeline correctness
+- Filter chain configuration validation
+- Pixel-perfect digital processing
+- Software regression detection
+
+**Output:** Precise digital processing validation with minimal variability
+
 ## Customization
 
 - Adjust quality thresholds in the test scripts
@@ -201,6 +300,8 @@ python clean_workspace.py --temp-files --keep-reports
 ├── test_pipeline.py            # Basic testing pipeline
 ├── test_document_pipeline.py   # Comprehensive testing
 ├── multipage_test.py           # Multi-page document testing
+├── print_quality_pipeline.py   # Complete end-to-end print quality testing
+├── filter_chain_test_pipeline.py # CUPS filter chain correctness testing
 ├── enhanced_comparison.py      # Advanced image comparison
 ├── test_algorithms.py          # Test script for image processing algorithms
 ├── test_color_detection.py     # Test script specifically for color/monochrome detection
@@ -256,6 +357,31 @@ The filter chain analysis system provides a way to inspect, understand, and test
 - **Troubleshooting Tools**: Compare output from different filters to isolate issues in complex print pipelines
 - **Printer Information Collection**: Gather comprehensive details about available printers and their capabilities
 - **PPD Analysis**: Extract filter information directly from printer PPD files when needed
+
+### Filter Chain Correctness Testing
+
+The `filter_chain_test_pipeline.py` provides specialized testing focused on CUPS filter processing accuracy:
+
+**Key Features:**
+- **Hardware-Independent Testing**: Tests filter chains without requiring physical printers or scanners
+- **Systematic Test Generation**: Creates targeted test images designed to reveal specific filter processing issues
+- **Digital Precision**: Performs pixel-perfect comparisons without hardware-induced variations
+- **Filter Isolation**: Identifies which specific filters in a chain may be causing processing problems
+- **Automated Test Suite**: Runs comprehensive tests across multiple document types and configurations
+
+**Test Categories:**
+- **Text Rendering**: Validates text processing and font rendering accuracy
+- **Image Processing**: Tests color space conversion, resolution scaling, and image compression
+- **Layout Preservation**: Ensures document structure and positioning remain intact
+- **Color Fidelity**: Verifies color accuracy and grayscale conversion
+- **DPI Handling**: Tests resolution scaling and DPI-specific processing
+
+**Reporting:**
+- Detailed filter-by-filter processing logs
+- Visual diff outputs showing exact processing changes
+- Quantitative metrics for each processing step
+- Pass/fail determination for regression testing
+- Export-friendly formats for CI/CD integration
 
 ## Image Processing Algorithms
 
