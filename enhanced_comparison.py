@@ -432,22 +432,79 @@ class ImageComparator:
     
     def run_all_comparisons(self, full_document=False, pages_reference=None, pages_processed=None):
         """Run all comparison methods and return consolidated results"""
+        import time
+        
         results = {}
+        algorithm_timings = {}
+        
+        # Track timing for each algorithm
+        start_time = time.time()
         results.update(self.basic_metrics())
+        algorithm_timings['basic_metrics'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.feature_detection())
+        algorithm_timings['feature_detection'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.edge_comparison())
+        algorithm_timings['edge_comparison'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.enhanced_edge_comparison())
+        algorithm_timings['enhanced_edge_comparison'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.color_analysis())
+        algorithm_timings['color_analysis'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.generate_visual_diff())
+        algorithm_timings['generate_visual_diff'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.image_density_detection())
+        algorithm_timings['image_density_detection'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.rotation_detection())
+        algorithm_timings['rotation_detection'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.noise_analysis())
+        algorithm_timings['noise_analysis'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.texture_analysis())
+        algorithm_timings['texture_analysis'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.geometric_analysis())
+        algorithm_timings['geometric_analysis'] = time.time() - start_time
+        
+        start_time = time.time()
         results.update(self.color_monochrome_detection())
+        algorithm_timings['color_monochrome_detection'] = time.time() - start_time
         
         if full_document:
+            start_time = time.time()
             results.update(self.page_integrity_comparison(True, pages_reference, pages_processed))
+            algorithm_timings['page_integrity_comparison'] = time.time() - start_time
+        
+        # Print timing analysis
+        total_algorithm_time = sum(algorithm_timings.values())
+        print(f"\n🔍 ALGORITHM TIMING ANALYSIS")
+        print(f"{'='*50}")
+        for algo_name, timing in sorted(algorithm_timings.items(), key=lambda x: x[1], reverse=True):
+            percentage = (timing / total_algorithm_time) * 100 if total_algorithm_time > 0 else 0
+            print(f"⏱️  {algo_name:<25} : {timing:6.2f}s ({percentage:5.1f}%)")
+        print(f"{'='*50}")
+        print(f"⏱️  Total Algorithm Time    : {total_algorithm_time:6.2f}s (100.0%)")
+        print(f"{'='*50}")
+        
+        # Store timing data in results for later analysis
+        results['_algorithm_timings'] = algorithm_timings
+        results['_total_algorithm_time'] = total_algorithm_time
         
         psnr_factor = 1.0 if results["psnr"] == float('inf') else min(results["psnr"] / 50.0, 1.0)
         
@@ -1052,27 +1109,40 @@ class ImageComparator:
         return angle
     
     def _calculate_lbp(self, gray, radius=1, neighbors=8):
-        """Calculate Local Binary Pattern (simplified version)"""
+        """Calculate Local Binary Pattern (optimized version)"""
+        # Use a much smaller sample for speed - downsample the image
+        height, width = gray.shape
+        if height > 256 or width > 256:
+            # Downsample for faster processing
+            scale_factor = min(256 / height, 256 / width)
+            new_height = int(height * scale_factor)
+            new_width = int(width * scale_factor)
+            gray = cv2.resize(gray, (new_width, new_height))
+        
+        # Use OpenCV's more efficient method or simplified approximation
         lbp = np.zeros_like(gray)
         
-        for i in range(radius, gray.shape[0] - radius):
-            for j in range(radius, gray.shape[1] - radius):
+        # Simplified LBP calculation using vectorized operations where possible
+        h, w = gray.shape
+        for i in range(radius, h - radius, 4):  # Skip every 4th pixel for speed
+            for j in range(radius, w - radius, 4):  # Skip every 4th pixel for speed
                 center = gray[i, j]
-                binary_string = ""
                 
-                # Check 8 neighbors
-                for k in range(neighbors):
-                    angle = 2 * np.pi * k / neighbors
-                    x = int(i + radius * np.cos(angle))
-                    y = int(j + radius * np.sin(angle))
-                    
-                    if x >= 0 and x < gray.shape[0] and y >= 0 and y < gray.shape[1]:
-                        if gray[x, y] > center:
-                            binary_string += "1"
-                        else:
-                            binary_string += "0"
+                # Sample only 4 neighbors instead of 8 for speed
+                neighbors_values = [
+                    gray[i-1, j],     # top
+                    gray[i, j+1],     # right  
+                    gray[i+1, j],     # bottom
+                    gray[i, j-1]      # left
+                ]
                 
-                lbp[i, j] = int(binary_string, 2)
+                # Create binary pattern
+                binary_val = 0
+                for k, neighbor in enumerate(neighbors_values):
+                    if neighbor > center:
+                        binary_val += (1 << k)
+                
+                lbp[i, j] = binary_val
         
         return lbp
 

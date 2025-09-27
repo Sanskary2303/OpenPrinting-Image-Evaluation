@@ -21,6 +21,9 @@ import re
 import argparse
 import logging
 import glob
+import time
+import cv2
+import numpy as np
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
@@ -42,9 +45,10 @@ class FilterChainTestPipeline:
     (Stops before actual printer to isolate filter chain testing)
     """
     
-    def __init__(self, printer_queue: str, output_dir: Optional[str] = None):
+    def __init__(self, printer_queue: str, output_dir: Optional[str] = None, fast_mode: bool = False):
         self.printer_queue = printer_queue
         self.output_dir = output_dir or f"filter_test_results_{printer_queue}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.fast_mode = fast_mode  # Skip some analysis for speed
         
         self.setup_logging()
         
@@ -56,6 +60,15 @@ class FilterChainTestPipeline:
         self.filter_chains = {}
         self.test_images = []
         self.results = {}
+        
+        # Performance tracking
+        self.performance_stats = {
+            'filter_chain_discovery': 0.0,
+            'test_image_generation': 0.0,
+            'filter_processing': 0.0,
+            'image_comparison': 0.0,
+            'report_generation': 0.0
+        }
         
         self.create_output_structure()
         
@@ -93,6 +106,7 @@ class FilterChainTestPipeline:
             
     def analyze_printer_capabilities(self) -> Dict[str, Any]:
         """Analyze printer capabilities and filter chains"""
+        start_time = time.time()
         self.logger.info(f"Analyzing filter chains for printer: {self.printer_queue}")
         
         try:
@@ -114,6 +128,10 @@ class FilterChainTestPipeline:
             
             self.logger.info(f"Found {len(self.supported_modes)} supported modes")
             self.logger.info(f"Filter chains: {list(self.filter_chains.keys())}")
+            
+            elapsed = time.time() - start_time
+            self.performance_stats['filter_chain_discovery'] = elapsed
+            self.logger.info(f"⏱️  Filter chain analysis took {elapsed:.2f} seconds")
             
             return {
                 'printer_info': self.printer_info,
@@ -263,6 +281,7 @@ class FilterChainTestPipeline:
             
     def generate_test_images(self) -> List[str]:
         """Generate test images for filter chain testing"""
+        start_time = time.time()
         self.logger.info("Generating test images for filter chain testing...")
         
         try:
@@ -279,7 +298,10 @@ class FilterChainTestPipeline:
                         shutil.copy2(src_path, dst_path)
                         self.test_images.append(dst_path)
             
+            elapsed = time.time() - start_time
+            self.performance_stats['test_image_generation'] = elapsed
             self.logger.info(f"Generated {len(self.test_images)} test images")
+            self.logger.info(f"⏱️  Test image generation took {elapsed:.2f} seconds")
             return self.test_images
             
         except Exception as e:
@@ -288,9 +310,12 @@ class FilterChainTestPipeline:
             
     def run_filter_chain_tests(self) -> Dict[str, Any]:
         """Run filter chain tests for all modes and images"""
+        start_time = time.time()
         self.logger.info("Starting filter chain correctness tests...")
         
         test_results = {}
+        filter_processing_time = 0.0
+        comparison_time = 0.0
         
         for mode in self.supported_modes:
             mode_name = mode['name']
@@ -308,9 +333,11 @@ class FilterChainTestPipeline:
                 
                 try:
                     # Process through filter chains
+                    filter_start = time.time()
                     filter_outputs = self._process_through_filter_chains(
                         test_image, mode, mode_name
                     )
+                    filter_processing_time += time.time() - filter_start
                     
                     if filter_outputs:
                         # Compare each filter chain output with original
@@ -318,9 +345,11 @@ class FilterChainTestPipeline:
                         
                         for input_type, output_path in filter_outputs.items():
                             if output_path:
+                                comp_start = time.time()
                                 comparison_results[input_type] = self._compare_filter_output(
                                     test_image, output_path, mode_name, image_name, input_type
                                 )
+                                comparison_time += time.time() - comp_start
                         
                         mode_results['image_results'][image_name] = {
                             'filter_outputs': filter_outputs,
@@ -343,6 +372,16 @@ class FilterChainTestPipeline:
             test_results[mode_name] = mode_results
             
         self.results = test_results
+        
+        # Record detailed timing
+        elapsed = time.time() - start_time
+        self.performance_stats['filter_processing'] = filter_processing_time
+        self.performance_stats['image_comparison'] = comparison_time
+        
+        self.logger.info(f"⏱️  Total filter chain testing took {elapsed:.2f} seconds")
+        self.logger.info(f"⏱️  - Filter processing: {filter_processing_time:.2f} seconds")
+        self.logger.info(f"⏱️  - Image comparison: {comparison_time:.2f} seconds")
+        
         return test_results
         
     def _process_through_filter_chains(self, image_path: str, mode: Dict[str, Any], mode_name: str) -> Dict[str, Optional[str]]:
@@ -351,7 +390,12 @@ class FilterChainTestPipeline:
         filter_outputs = {}
         mode_filter_chains = self.filter_chains.get(mode_name, {})
         
+        # Handle case where filter chains might be a list instead of dict
+        if isinstance(mode_filter_chains, list):
+            mode_filter_chains = {'default': mode_filter_chains}
+        
         for input_type, filter_chain in mode_filter_chains.items():
+            step_start = time.time()
             try:
                 self.logger.debug(f"Processing {os.path.basename(image_path)} through {input_type} filter chain: {filter_chain}")
                 
@@ -365,8 +409,12 @@ class FilterChainTestPipeline:
                 
                 filter_outputs[input_type] = final_output
                 
+                step_elapsed = time.time() - step_start
+                self.logger.debug(f"⏱️  Filter chain {input_type} took {step_elapsed:.2f} seconds")
+                
             except Exception as e:
-                self.logger.warning(f"Filter chain processing failed for {input_type}: {e}")
+                step_elapsed = time.time() - step_start
+                self.logger.warning(f"Filter chain processing failed for {input_type} after {step_elapsed:.2f}s: {e}")
                 filter_outputs[input_type] = None
                 
         return filter_outputs
@@ -375,11 +423,13 @@ class FilterChainTestPipeline:
                             mode: Dict[str, Any], input_type: str) -> Optional[str]:
         """Execute the complete filter chain and return final output path"""
         
+        execution_start = time.time()
         try:
             if not filter_chain or filter_chain == ['direct']:
                 # No filtering needed, just copy
                 final_output = f"{output_base}_direct.png"
                 shutil.copy2(input_path, final_output)
+                self.logger.debug(f"⏱️  Direct copy took {time.time() - execution_start:.2f} seconds")
                 return final_output
                 
             # Execute filter chain step by step
@@ -389,24 +439,33 @@ class FilterChainTestPipeline:
             os.makedirs(intermediate_dir, exist_ok=True)
             
             for i, filter_name in enumerate(filter_chain):
+                filter_start = time.time()
                 step_output = os.path.join(intermediate_dir, f"step_{i}_{filter_name}")
                 
                 if self._execute_single_filter(current_input, step_output, filter_name, mode):
                     current_input = step_output
-                    self.logger.debug(f"Filter step {i} ({filter_name}) completed")
+                    filter_elapsed = time.time() - filter_start
+                    self.logger.debug(f"⏱️  Filter step {i} ({filter_name}) took {filter_elapsed:.2f} seconds")
                 else:
-                    self.logger.warning(f"Filter step {i} ({filter_name}) failed")
+                    filter_elapsed = time.time() - filter_start
+                    self.logger.warning(f"Filter step {i} ({filter_name}) failed after {filter_elapsed:.2f} seconds")
                     return None
                     
             # Convert final output to analyzable format
+            convert_start = time.time()
             final_output = f"{output_base}_final.png"
             if self._convert_for_analysis(current_input, final_output):
+                convert_elapsed = time.time() - convert_start
+                total_elapsed = time.time() - execution_start
+                self.logger.debug(f"⏱️  Format conversion took {convert_elapsed:.2f} seconds")
+                self.logger.debug(f"⏱️  Total filter chain execution took {total_elapsed:.2f} seconds")
                 return final_output
             else:
                 return None
                 
         except Exception as e:
-            self.logger.error(f"Filter chain execution failed: {e}")
+            total_elapsed = time.time() - execution_start
+            self.logger.error(f"Filter chain execution failed after {total_elapsed:.2f} seconds: {e}")
             return None
             
     def _execute_single_filter(self, input_path: str, output_path: str, filter_name: str, mode: Dict[str, Any]) -> bool:
@@ -515,6 +574,7 @@ class FilterChainTestPipeline:
                              image_name: str, input_type: str) -> Dict[str, Any]:
         """Compare original image with filter chain output"""
         
+        comparison_start = time.time()
         try:
             # comparison directory
             comparison_dir = os.path.join(self.dirs['comparisons'], mode_name, 
@@ -522,18 +582,72 @@ class FilterChainTestPipeline:
             os.makedirs(comparison_dir, exist_ok=True)
             
             #enhanced comparison
+            comparator_start = time.time()
             comparator = ImageComparator(original_path, filtered_path, comparison_dir)
-            results = comparator.run_all_comparisons()
+            
+            if self.fast_mode:
+                # Ultra-fast mode: minimal comparison only
+                self.logger.debug("Running in ultra-fast mode - minimal comparison only")
+                
+                # Just check if files exist and basic size comparison
+                original_img = cv2.imread(original_path, cv2.IMREAD_GRAYSCALE)
+                filtered_img = cv2.imread(filtered_path, cv2.IMREAD_GRAYSCALE)
+                
+                if original_img is None or filtered_img is None:
+                    results = {
+                        'ssim': 0.0,
+                        'histogram_similarity': 0.0,
+                        'overall_quality': 0.0,
+                        'error': 'Image loading failed'
+                    }
+                else:
+                    # Resize if different sizes
+                    if original_img.shape != filtered_img.shape:
+                        filtered_img = cv2.resize(filtered_img, (original_img.shape[1], original_img.shape[0]))
+                    
+                    # Quick MSE calculation
+                    mse = np.mean((original_img.astype(float) - filtered_img.astype(float)) ** 2)
+                    
+                    # Simple correlation coefficient as quick similarity measure
+                    correlation = np.corrcoef(original_img.flatten(), filtered_img.flatten())[0, 1]
+                    correlation = max(0, correlation)  # Ensure non-negative
+                    
+                    # Quick histogram similarity
+                    hist1 = cv2.calcHist([original_img], [0], None, [256], [0, 256])
+                    hist2 = cv2.calcHist([filtered_img], [0], None, [256], [0, 256])
+                    hist_similarity = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+                    
+                    results = {
+                        'ssim': correlation,  # Use correlation as proxy for SSIM
+                        'mse': float(mse),
+                        'histogram_similarity': float(hist_similarity),
+                        'overall_quality': (correlation * 0.6 + hist_similarity * 0.4)
+                    }
+            else:
+                # Full mode: run all algorithms
+                self.logger.debug("Running in full mode - all algorithms")
+                results = comparator.run_all_comparisons()
+                
+            comparator_elapsed = time.time() - comparator_start
             
             # Add filter-specific analysis
+            filter_analysis_start = time.time()
             results['filter_chain_effects'] = self._analyze_filter_effects(
                 original_path, filtered_path, mode_name
             )
+            filter_analysis_elapsed = time.time() - filter_analysis_start
+            
+            total_elapsed = time.time() - comparison_start
+            self.logger.debug(f"⏱️  Image comparison breakdown:")
+            self.logger.debug(f"⏱️  - ImageComparator: {comparator_elapsed:.2f} seconds")
+            self.logger.debug(f"⏱️  - Filter analysis: {filter_analysis_elapsed:.2f} seconds")
+            self.logger.debug(f"⏱️  - Total comparison: {total_elapsed:.2f} seconds")
             
             return results
             
         except Exception as e:
-            self.logger.error(f"Filter output comparison failed: {e}")
+            total_elapsed = time.time() - comparison_start
+            self.logger.error(f"Filter output comparison failed after {total_elapsed:.2f} seconds: {e}")
             return {'error': str(e)}
             
     def _analyze_filter_effects(self, original_path: str, filtered_path: str, mode_name: str) -> Dict[str, Any]:
@@ -590,6 +704,7 @@ class FilterChainTestPipeline:
             
     def generate_comprehensive_report(self) -> str:
         """Generate comprehensive filter chain test report"""
+        start_time = time.time()
         self.logger.info("Generating filter chain test report...")
         
         try:
@@ -608,6 +723,9 @@ class FilterChainTestPipeline:
             with open(json_path, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2, default=str)
                 
+            elapsed = time.time() - start_time
+            self.performance_stats['report_generation'] = elapsed
+            self.logger.info(f"⏱️  Report generation took {elapsed:.2f} seconds")
             self.logger.info(f"Reports generated: {report_path}, {json_path}")
             return report_path
             
@@ -752,11 +870,76 @@ class FilterChainTestPipeline:
             'success_rate': successful_tests / total_tests if total_tests > 0 else 0,
             'total_modes_tested': len(self.results),
             'total_filter_chains': sum(len(mode_results['filter_chains']) 
-                                     for mode_results in self.results.values())
+                                     for mode_results in self.results.values()),
+            'performance_stats': self.performance_stats
         }
+        
+    def print_performance_summary(self):
+        """Print detailed performance breakdown"""
+        total_time = sum(self.performance_stats.values())
+        
+        print(f"\n{'='*60}")
+        print("🔍 PERFORMANCE ANALYSIS")
+        print(f"{'='*60}")
+        
+        for operation, time_taken in self.performance_stats.items():
+            percentage = (time_taken / total_time * 100) if total_time > 0 else 0
+            operation_name = operation.replace('_', ' ').title()
+            print(f"⏱️  {operation_name:<25}: {time_taken:>8.2f}s ({percentage:>5.1f}%)")
+            
+        print(f"{'='*60}")
+        print(f"⏱️  Total Pipeline Time    : {total_time:>8.2f}s (100.0%)")
+        print(f"{'='*60}")
+        
+        # Identify bottlenecks
+        if total_time > 0:
+            bottleneck = max(self.performance_stats.items(), key=lambda x: x[1])
+            print(f"🚨 Primary Bottleneck: {bottleneck[0].replace('_', ' ').title()}")
+            print(f"   Taking {bottleneck[1]:.2f}s ({bottleneck[1]/total_time*100:.1f}% of total time)")
+            
+            if bottleneck[1] / total_time > 0.5:
+                print(f"⚠️  This operation is taking over 50% of processing time!")
+                self._suggest_optimizations(bottleneck[0])
+                
+        print(f"{'='*60}")
+        
+    def _suggest_optimizations(self, bottleneck_operation: str):
+        """Suggest optimizations based on the bottleneck"""
+        suggestions = {
+            'test_image_generation': [
+                "• Consider generating smaller test images",
+                "• Cache generated images for repeated runs",
+                "• Generate only essential test cases"
+            ],
+            'filter_processing': [
+                "• Check if CUPS filters are installed and optimized",
+                "• Consider processing images in parallel",
+                "• Reduce the number of test images per run"
+            ],
+            'image_comparison': [
+                "• The ImageComparator is running all algorithms - this is the most detailed analysis",
+                "• Consider disabling some algorithms if speed is critical",
+                "• Process smaller images for faster comparison"
+            ],
+            'filter_chain_discovery': [
+                "• Cache filter chain information",
+                "• Check CUPS configuration for optimization"
+            ],
+            'report_generation': [
+                "• Generate simpler reports for faster processing",
+                "• Consider generating reports asynchronously"
+            ]
+        }
+        
+        if bottleneck_operation in suggestions:
+            print(f"\n💡 Optimization Suggestions for {bottleneck_operation.replace('_', ' ').title()}:")
+            for suggestion in suggestions[bottleneck_operation]:
+                print(f"   {suggestion}")
+        print()
         
     def run_complete_pipeline(self) -> str:
         """Run the complete filter chain testing pipeline"""
+        pipeline_start = time.time()
         self.logger.info("Starting complete filter chain correctness testing pipeline...")
         
         try:
@@ -776,9 +959,15 @@ class FilterChainTestPipeline:
             self.logger.info("Step 4: Generating reports...")
             report_path = self.generate_comprehensive_report()
             
+            total_pipeline_time = time.time() - pipeline_start
+            
             self.logger.info("Filter chain testing pipeline completed successfully!")
             self.logger.info(f"Results available in: {self.output_dir}")
             self.logger.info(f"Main report: {report_path}")
+            self.logger.info(f"⏱️  Total pipeline execution time: {total_pipeline_time:.2f} seconds")
+            
+            # Print detailed performance analysis
+            self.print_performance_summary()
             
             return report_path
             
@@ -792,6 +981,7 @@ def main():
     parser.add_argument('printer_queue', help='Printer queue name')
     parser.add_argument('--output-dir', help='Output directory (optional)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
+    parser.add_argument('--fast-mode', action='store_true', help='Fast mode: use only essential algorithms for quicker results')
     
     args = parser.parse_args()
     
@@ -809,7 +999,7 @@ def main():
         print("="*80)
         
         # Create and run pipeline
-        pipeline = FilterChainTestPipeline(args.printer_queue, args.output_dir)
+        pipeline = FilterChainTestPipeline(args.printer_queue, args.output_dir, fast_mode=args.fast_mode)
         report_path = pipeline.run_complete_pipeline()
         
         print(f"\n{'='*60}")
