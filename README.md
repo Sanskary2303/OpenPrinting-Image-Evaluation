@@ -2,6 +2,44 @@
 
 A comprehensive toolkit for evaluating print/scan job processing by comparing original and processed document images.
 
+## 🚀 Quick Start - See Results in 60 Seconds
+
+**New to this project? Start here for instant impressive results:**
+
+### HOWTO-1: Print Quality Analysis (2 minutes)
+
+```bash
+python print_quality_pipeline.py Virtual_PDF_Printer
+# See quality scores, visual differences, problem detection
+```
+
+### HOWTO-2: CUPS Filter Detective (3 minutes)  
+
+```bash
+python filter_chain_test_pipeline.py Virtual_PDF_Printer --fast-mode
+# X-ray vision: see what each filter does to your document
+```
+
+### HOWTO-3: Document Testing Suite (5 minutes)
+
+```bash
+python test_document_pipeline.py  
+# Test 15+ document types, get comprehensive quality report
+```
+
+### HOWTO-4: Image Analysis Demo (3 minutes)
+
+```bash
+python example_usage.py
+# Explore 11 advanced image analysis algorithms
+```
+
+**📚 [Complete HOWTOs with examples →](quick_start_examples/)**
+
+<!-- **✅ Verify everything works:** `python quick_start_examples/verify_examples.py --quick` -->
+
+---
+
 ## Project Overview
 
 This project implements automated testing for print quality assurance by evaluating images before and after processing through a print pipeline. It uses computer vision and image processing techniques to detect differences, verify text preservation, and ensure proper rendering of graphical elements.
@@ -11,40 +49,40 @@ The system supports extensive testing with various document types including text
 ## Features
 
 - **Comprehensive Image Comparison** 
-    - SSIM (Structural Similarity Index) analysis
-    - Feature detection and matching using ORB
-    - Edge detection and comparison
-    - Color fidelity analysis with histogram comparison and Delta-E metrics
-    - Visual difference heatmaps
-    - Edge quality analysis with multi-scale edge detection
-    - Advanced algorithms: density detection, rotation analysis, noise analysis, texture analysis, and geometric analysis
+  - SSIM (Structural Similarity Index) analysis
+  - Feature detection and matching using ORB
+  - Edge detection and comparison
+  - Color fidelity analysis with histogram comparison and Delta-E metrics
+  - Visual difference heatmaps
+  - Edge quality analysis with multi-scale edge detection
+  - Advanced algorithms: density detection, rotation analysis, noise analysis, texture analysis, and geometric analysis
 
 - **Page Integrity Verification**
-    - Multi-page document processing
-    - Page completeness verification
-    - Page order validation
-    - Missing and duplicate page detection
-    - Page-by-page quality comparison
+  - Multi-page document processing
+  - Page completeness verification
+  - Page order validation
+  - Missing and duplicate page detection
+  - Page-by-page quality comparison
 
 - **Text Preservation Testing**
-    - OCR-based text extraction
-    - Text similarity analysis
-    - Font rendering verification
+  - OCR-based text extraction
+  - Text similarity analysis
+  - Font rendering verification
 
 - **Diverse Test Documents**
-    - Text in multiple languages (English, Spanish, French, German, etc.)
-    - Various fonts and sizes
-    - Pure image documents
-    - Mixed content (text and images)
-    - Complex layouts with tables and columns
-    - Multi-page documents with orientation variations
+  - Text in multiple languages (English, Spanish, French, German, etc.)
+  - Various fonts and sizes
+  - Pure image documents
+  - Mixed content (text and images)
+  - Complex layouts with tables and columns
+  - Multi-page documents with orientation variations
 
 - **Detailed Reporting**
-    - HTML reports with visual comparisons
-    - CSV summary files
-    - JSON result data for each test
-    - Pass/fail determination based on customizable thresholds
-    - Visual page integrity maps for multi-page documents
+  - HTML reports with visual comparisons
+  - CSV summary files
+  - JSON result data for each test
+  - Pass/fail determination based on customizable thresholds
+  - Visual page integrity maps for multi-page documents
 
 ## Components
 
@@ -296,7 +334,7 @@ python clean_workspace.py --temp-files --keep-reports
 
 ## Structure
 
-```
+```text
 ├── test_pipeline.py            # Basic testing pipeline
 ├── test_document_pipeline.py   # Comprehensive testing
 ├── multipage_test.py           # Multi-page document testing
@@ -363,6 +401,7 @@ The filter chain analysis system provides a way to inspect, understand, and test
 The `filter_chain_test_pipeline.py` provides specialized testing focused on CUPS filter processing accuracy:
 
 **Key Features:**
+
 - **Hardware-Independent Testing**: Tests filter chains without requiring physical printers or scanners
 - **Systematic Test Generation**: Creates targeted test images designed to reveal specific filter processing issues
 - **Digital Precision**: Performs pixel-perfect comparisons without hardware-induced variations
