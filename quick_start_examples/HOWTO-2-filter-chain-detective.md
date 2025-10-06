@@ -4,12 +4,30 @@
 
 X-ray vision into your CUPS print pipeline! See exactly what each filter does to your document, step-by-step, and identify which filter causes quality problems.
 
+## Prerequisites
+
+Same as HOWTO-1 - you need a virtual PDF printer (Cups-PDF on Fedora, PDF on Ubuntu).
+
+```bash
+# Verify your printer name
+lpstat -p
+```
+
 ## Quick Start
 
 ### Step 1: Run Filter Chain Analysis
 
 ```bash
-python filter_chain_test_pipeline.py Virtual_PDF_Printer --verbose
+# Use YOUR printer queue name
+
+# Fedora/RHEL:
+python filter_chain_test_pipeline.py Cups-PDF --verbose
+
+# Ubuntu/Debian:
+python filter_chain_test_pipeline.py PDF --verbose
+
+# Or if executable:
+./filter_chain_test_pipeline.py PDF --verbose
 ```
 
 ### Step 2: Check the Results
@@ -58,24 +76,29 @@ BOTTLENECK DETECTED: imagetoraster causing 12% quality reduction
 ### Fast Mode (90x faster)
 
 ```bash
-python filter_chain_test_pipeline.py Virtual_PDF_Printer --fast-mode
+# Fedora/RHEL:
+python filter_chain_test_pipeline.py Cups-PDF --fast-mode
+
+# Ubuntu/Debian:
+python filter_chain_test_pipeline.py PDF --fast-mode
 ```
 
 Perfect for quick checks - uses optimized algorithms.
 
-### Test Different Input Types
+### Test Different Printers
 
 ```bash
-# Test with different document types
-python filter_chain_test_pipeline.py PDF_Printer
-python filter_chain_test_pipeline.py Image_Printer  
-python filter_chain_test_pipeline.py Text_Printer
+# List all available printers first
+lpstat -p
+
+# Then test with any printer
+python filter_chain_test_pipeline.py YOUR_PRINTER_NAME
 ```
 
 ### Debug Mode for Deep Analysis
 
 ```bash
-python filter_chain_test_pipeline.py Virtual_PDF_Printer --verbose --debug
+python filter_chain_test_pipeline.py PDF --verbose
 ```
 
 ## Understanding Results
@@ -98,7 +121,7 @@ python filter_chain_test_pipeline.py Virtual_PDF_Printer --verbose --debug
 ### Debug Print Quality Issues
 
 ```bash
-# Customer reports blurry prints
+# Customer reports blurry prints - test with their printer
 python filter_chain_test_pipeline.py Customer_Printer --verbose
 
 # Result: imagetoraster filter using wrong DPI settings

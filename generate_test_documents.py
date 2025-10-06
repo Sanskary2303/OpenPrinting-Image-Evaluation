@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors

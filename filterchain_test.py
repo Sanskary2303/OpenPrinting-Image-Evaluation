@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from filter_chain import get_filter_chain
 from printer_info import get_available_printers
 import subprocess

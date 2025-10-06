@@ -4,17 +4,49 @@
 
 See exactly how your documents are affected by the print processing pipeline with detailed quality scores and visual comparisons.
 
+## Prerequisites
+
+You need a virtual PDF printer. Check which one you have:
+
+```bash
+lpstat -p
+```
+
+Common names:
+
+- **Cups-PDF** (Fedora/RHEL with cups-pdf package)
+- **PDF** (Ubuntu/Debian with cups-pdf package)
+
+If you don't have one, install cups-pdf:
+
+```bash
+# Fedora/RHEL:
+sudo dnf install cups-pdf
+
+# Ubuntu/Debian:
+sudo apt-get install cups-pdf
+```
+
 ## Quick Start
 
 ### Step 1: Run the Print Quality Test
 
 ```bash
-python print_quality_pipeline.py Virtual_PDF_Printer
+# Use YOUR printer queue name (found via: lpstat -p)
+
+# Fedora/RHEL:
+python print_quality_pipeline.py Cups-PDF
+
+# Ubuntu/Debian:
+python print_quality_pipeline.py PDF
+
+# Or if scripts are executable
+./print_quality_pipeline.py PDF
 ```
 
 ### Step 2: Check the Results
 
-The test will create a directory like `print_test_results_Virtual_PDF_Printer_20250928_143022/` containing:
+The test will create a directory like `print_test_results_Cups-PDF_20250928_143022/` containing:
 
 - **`reports/print_quality_report.html`** - Visual report with before/after comparisons
 - **`analysis_results/`** - JSON files with detailed metrics
@@ -78,13 +110,13 @@ python print_quality_pipeline.py Virtual_PDF_Printer --verbose
 - **Edge Quality**: Sharpness preservation
 - **Color Similarity**: Color accuracy maintenance
 
-## ⚡ Performance
+## Performance
 
 - **37 test images** processed automatically
 - **11 advanced algorithms** analyze each image
 - **Complete analysis in ~2-5 minutes**
 
-## 🎯 Next Steps
+## Next Steps
 
 Once you see these impressive results:
 

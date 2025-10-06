@@ -2,21 +2,75 @@
 
 A comprehensive toolkit for evaluating print/scan job processing by comparing original and processed document images.
 
-## 🚀 Quick Start - See Results in 60 Seconds
+## Prerequisites & Setup
+
+### Virtual PDF Printer Setup
+
+You need a virtual PDF printer that saves output to files instead of physical printing.
+
+#### **For Fedora/RHEL:**
+
+```bash
+# Install cups-pdf
+sudo dnf install cups-pdf
+
+# This creates a printer queue named "Cups-PDF"
+# Verify it exists:
+lpstat -p Cups-PDF
+# Output: printer Cups-PDF is idle
+
+# Output files will be saved in: ~/PDF/
+```
+
+#### **For Ubuntu/Debian:**
+
+```bash
+# Install cups-pdf
+sudo apt-get install cups-pdf
+
+# This creates a printer queue named "PDF"
+# Verify it exists:
+lpstat -p PDF
+# Output: printer PDF is idle
+
+# Output files will be saved in: ~/PDF/
+```
+
+#### **Finding Your Printer Queue Name:**
+
+```bash
+# List all available printers
+lpstat -p
+
+# Common names:
+# - "Cups-PDF" (Fedora/RHEL with cups-pdf)
+# - "PDF" (Ubuntu/Debian with cups-pdf)
+# - "Virtual_PDF_Printer" (custom manual setup)
+```
+
+**Important:** Use your actual printer queue name in the commands below. Replace `Cups-PDF` with your printer name (e.g., `PDF` on Ubuntu).
+
+## Quick Start - See Results in 60 Seconds
 
 **New to this project? Start here for instant impressive results:**
 
 ### HOWTO-1: Print Quality Analysis (2 minutes)
 
 ```bash
-python print_quality_pipeline.py Virtual_PDF_Printer
+# Use your printer queue name
+python print_quality_pipeline.py Cups-PDF    # Fedora/RHEL
+# OR
+python print_quality_pipeline.py PDF         # Ubuntu/Debian
+
 # See quality scores, visual differences, problem detection
 ```
 
 ### HOWTO-2: CUPS Filter Detective (3 minutes)  
 
 ```bash
-python filter_chain_test_pipeline.py Virtual_PDF_Printer --fast-mode
+# Use your printer queue name
+python filter_chain_test_pipeline.py Cups-PDF --fast-mode
+
 # X-ray vision: see what each filter does to your document
 ```
 
@@ -36,7 +90,7 @@ python example_usage.py
 
 **📚 [Complete HOWTOs with examples →](quick_start_examples/)**
 
-<!-- **✅ Verify everything works:** `python quick_start_examples/verify_examples.py --quick` -->
+**✅ Verify everything works:** `python verify_setup.py`
 
 ---
 
