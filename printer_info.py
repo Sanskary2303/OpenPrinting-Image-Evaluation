@@ -59,6 +59,9 @@ def get_printer_details_with_pycups() -> Dict[str, Dict[str, str]]:
     """Get detailed printer information using pycups library."""
     try:
         import cups
+        # Check if this is the correct pycups module
+        if not hasattr(cups, 'Connection'):
+            raise AttributeError("Wrong 'cups' module - need pycups. Install with: pip install pycups")
         conn = cups.Connection()
         printers = conn.getPrinters()
         
@@ -84,6 +87,9 @@ def get_printer_ppd_info(printer_name: str) -> Dict[str, Union[str, List[str]]]:
     """Get detailed information from a printer's PPD using pycups."""
     try:
         import cups
+        # Check if this is the correct pycups module
+        if not hasattr(cups, 'Connection'):
+            raise AttributeError("Wrong 'cups' module - need pycups. Install with: pip install pycups")
         conn = cups.Connection()
         
         ppd_filename = conn.getPPD(printer_name)
@@ -131,6 +137,8 @@ def get_printer_model(printer_name: str) -> str:
     """Get the model information for a specific printer using pycups."""
     try:
         import cups
+        if not hasattr(cups, 'Connection'):
+            raise ImportError("Wrong 'cups' module detected. Please uninstall the 'cups' package and ensure 'pycups' is installed.\nRun: pip uninstall cups && pip install pycups")
         conn = cups.Connection()
         
         printers = conn.getPrinters()

@@ -14,6 +14,15 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 
+# Verify correct pycups module is imported
+if not hasattr(cups, 'Connection'):
+    raise ImportError(
+        "Wrong 'cups' module detected. The 'cups' package from pip conflicts with the required 'pycups' library.\n"
+        "Please uninstall the 'cups' package and ensure 'pycups' is installed:\n"
+        "  pip uninstall cups\n"
+        "  pip install pycups"
+    )
+
 from printer_info import (
     get_available_printers, 
     get_printer_model, 

@@ -4,6 +4,15 @@ import re
 import tempfile
 from typing import List, Dict, Optional, Tuple, Union
 
+# Verify correct pycups module is imported
+if not hasattr(cups, 'Connection'):
+    raise ImportError(
+        "Wrong 'cups' module detected. The 'cups' package from pip conflicts with the required 'pycups' library.\n"
+        "Please uninstall the 'cups' package and ensure 'pycups' is installed:\n"
+        "  pip uninstall cups\n"
+        "  pip install pycups"
+    )
+
 # Function to find ALL conversion files
 def get_cups_mime_paths() -> Dict[str, str]:
     """Get paths to CUPS MIME files"""

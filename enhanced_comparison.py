@@ -81,30 +81,41 @@ class ImageComparator:
         kp1, des1 = orb.detectAndCompute(self.original_gray, None)
         kp2, des2 = orb.detectAndCompute(self.processed_gray, None)
         
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        
-        if des1 is not None and des2 is not None:
-            matches = bf.match(des1, des2)
+        # Check if descriptors are valid and have sufficient data
+        if des1 is not None and des2 is not None and len(des1) > 0 and len(des2) > 0:
+            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
             
-            matches = sorted(matches, key=lambda x: x.distance)
-            
-            if len(matches) > 0:
-                avg_distance = sum(m.distance for m in matches) / len(matches)
-                match_confidence = 1.0 - min(avg_distance / 100.0, 1.0)  # Normalize
-            else:
-                match_confidence = 0.0
+            try:
+                matches = bf.match(des1, des2)
                 
-            matched_img = cv2.drawMatches(self.original, kp1, self.processed, kp2, 
-                                        matches[:30], None, flags=2)
-            output_path = os.path.join(self.output_dir, 'feature_matches.png')
-            cv2.imwrite(output_path, matched_img)
-            
-            return {
-                "keypoint_matches": len(matches),
-                "keypoints_original": len(kp1),
-                "keypoints_processed": len(kp2),
-                "match_confidence": match_confidence
-            }
+                matches = sorted(matches, key=lambda x: x.distance)
+                
+                if len(matches) > 0:
+                    avg_distance = sum(m.distance for m in matches) / len(matches)
+                    match_confidence = 1.0 - min(avg_distance / 100.0, 1.0)  # Normalize
+                else:
+                    match_confidence = 0.0
+                    
+                matched_img = cv2.drawMatches(self.original, kp1, self.processed, kp2, 
+                                            matches[:30], None, flags=2)
+                output_path = os.path.join(self.output_dir, 'feature_matches.png')
+                cv2.imwrite(output_path, matched_img)
+                
+                return {
+                    "keypoint_matches": len(matches),
+                    "keypoints_original": len(kp1),
+                    "keypoints_processed": len(kp2),
+                    "match_confidence": match_confidence
+                }
+            except cv2.error as e:
+                # Handle OpenCV errors (e.g., insufficient descriptors for matching)
+                return {
+                    "keypoint_matches": 0,
+                    "keypoints_original": len(kp1) if kp1 else 0,
+                    "keypoints_processed": len(kp2) if kp2 else 0,
+                    "match_confidence": 0.0,
+                    "error": f"Feature matching failed: {str(e)}"
+                }
         else:
             return {
                 "keypoint_matches": 0,
@@ -333,18 +344,22 @@ class ImageComparator:
                 kp1, des1 = orb.detectAndCompute(ref_gray, None)
                 kp2, des2 = orb.detectAndCompute(proc_gray, None)
                 
-                if des1 is not None and des2 is not None and len(kp1) > 0 and len(kp2) > 0:
-                    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-                    matches = bf.match(des1, des2)
-                    
-                    if len(matches) > 0:
-                        avg_distance = sum(m.distance for m in matches) / len(matches)
-                        num_matches = len(matches)
-                        confidence = num_matches / (1 + avg_distance/100)
+                if des1 is not None and des2 is not None and len(des1) > 0 and len(des2) > 0 and len(kp1) > 0 and len(kp2) > 0:
+                    try:
+                        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                        matches = bf.match(des1, des2)
                         
-                        if confidence > best_match_confidence:
-                            best_match_confidence = confidence
-                            best_match_idx = j
+                        if len(matches) > 0:
+                            avg_distance = sum(m.distance for m in matches) / len(matches)
+                            num_matches = len(matches)
+                            confidence = num_matches / (1 + avg_distance/100)
+                            
+                            if confidence > best_match_confidence:
+                                best_match_confidence = confidence
+                                best_match_idx = j
+                    except cv2.error:
+                        # Skip matching if OpenCV encounters an error
+                        pass
             
             if best_match_idx >= 0:
                 page_mapping[i] = best_match_idx
