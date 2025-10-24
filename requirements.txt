@@ -1,0 +1,20 @@
+# OpenPrinting Image Quality Evaluation - Python Dependencies
+
+# Core dependencies
+reportlab
+pillow
+opencv-python
+scikit-image
+pytesseract
+pandas
+colormath
+matplotlib
+diffoscope
+PyMuPDF
+
+# CUPS integration (IMPORTANT: use pycups, not cups)
+pycups
+
+# Optional dependencies for advanced features
+numpy
+scipy
