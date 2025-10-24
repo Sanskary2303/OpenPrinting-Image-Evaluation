@@ -26,7 +26,14 @@ lpstat -p Cups-PDF
 
 ```bash
 # Install cups-pdf
-sudo apt-get install cups-pdf
+
+sudo apt install cups-pdf
+
+# For Ubuntu 25.10 and later, use:
+sudo apt install printer-driver-cups-pdf
+
+# Reload systemd to recognize the new printer
+sudo systemctl daemon-reload
 
 # This creates a printer queue named "PDF"
 # Verify it exists:
@@ -35,6 +42,8 @@ lpstat -p PDF
 
 # Output files will be saved in: ~/PDF/
 ```
+
+**Note for Ubuntu 25.10 users**: The package is `printer-driver-cups-pdf` (not `cups-pdf`).
 
 #### **Finding Your Printer Queue Name:**
 
@@ -54,7 +63,7 @@ lpstat -p
 
 **New to this project? Start here for instant impressive results:**
 
-### HOWTO-1: Print Quality Analysis (2 minutes)
+### HOWTO-1: Print Quality Analysis (15-20 minutes full)
 
 ```bash
 # Use your printer queue name
@@ -164,9 +173,32 @@ The system supports extensive testing with various document types including text
 
 ## Installation Requirements
 
+### Python Environment Setup (Recommended)
+
+**For Ubuntu/Debian users**, it's recommended to use a virtual environment:
+
 ```bash
-pip install reportlab pillow opencv-python scikit-image pytesseract pandas colormath matplotlib diffoscope PyMuPDF
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install all required Python packages
+pip install -r requirements.txt
+
+# Note: If you get an error about 'cups' module, uninstall the wrong package:
+pip uninstall cups
+pip install pycups
 ```
+
+**For Fedora/RHEL users**:
+
+```bash
+pip install -c requirements.txt
+```
+
+**Important**: Make sure to install `pycups` (not `cups`). The `cups` package from pip conflicts with the required `pycups` library.
+
+### System Packages
 
 Additionally, ensure you have the following system packages:
 
@@ -174,6 +206,7 @@ Additionally, ensure you have the following system packages:
 - CUPS (for print processing)
 - Tesseract OCR (for text extraction)
 - cups-filters (for accessing CUPS filter components)
+- printer-driver-cups-pdf (Ubuntu) or cups-pdf (Fedora)
 
 ## Usage
 

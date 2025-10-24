@@ -1,8 +1,10 @@
-# HOWTO-1: Print Quality Analysis (2 minutes)
+# HOWTO-1: Print Quality Analysis (15-20 minutes full)
 
 ## What you'll achieve
 
 See exactly how your documents are affected by the print processing pipeline with detailed quality scores and visual comparisons.
+
+**Note on timing**: Full analysis with all 37 test images takes about 15-20 minutes.
 
 ## Prerequisites
 
@@ -24,7 +26,12 @@ If you don't have one, install cups-pdf:
 sudo dnf install cups-pdf
 
 # Ubuntu/Debian:
-sudo apt-get install cups-pdf
+sudo apt install cups-pdf
+# For Ubuntu 25.10 and later, use:
+sudo apt install printer-driver-cups-pdf
+
+# Reload systemd to recognize the new printer
+sudo systemctl daemon-reload
 ```
 
 ## Quick Start

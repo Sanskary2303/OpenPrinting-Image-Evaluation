@@ -2,7 +2,7 @@
 
 ## Choose Your Adventure
 
-### **HOWTO-1**: [Print Quality Analysis](HOWTO-1-print-quality-analysis.md) *(2 minutes)*
+### **HOWTO-1**: [Print Quality Analysis](HOWTO-1-print-quality-analysis.md) *(15-20 minutes full)*
 
 - **Perfect for**: First-time users wanting immediate results
 - **What you get**: Quality scores, visual comparisons, problem detection
