@@ -8,11 +8,11 @@
 - **What you get**: Quality scores, visual comparisons, problem detection
 - **Command**: `python print_quality_pipeline.py Virtual_PDF_Printer`
 
-### **HOWTO-2**: [CUPS Filter Chain Detective](HOWTO-2-filter-chain-detective.md) *(3 minutes)*
+### **HOWTO-2**: [CUPS Filter Chain Detective](HOWTO-2-filter-chain-detective.md) *(5 minutes)*
 
 - **Perfect for**: Debugging print pipeline issues
 - **What you get**: Step-by-step filter analysis, bottleneck detection
-- **Command**: `python filter_chain_test_pipeline.py Virtual_PDF_Printer --fast-mode`
+- **Command**: `python filter_chain_test_pipeline.py Virtual_PDF_Printer`
 
 ### **HOWTO-3**: [Document Testing Suite](HOWTO-3-document-testing-suite.md) *(5 minutes)*
 
@@ -56,9 +56,10 @@ python verify_examples.py
 ## Tips for Success
 
 1. **Start with HOWTO-1** for immediate gratification
-2. **Use fast mode** (`--fast-mode`) for quicker results  
-3. **Check HTML reports** for visual results
-4. **Run verification** if anything doesn't work
+2. **Check HTML reports** for visual results
+3. **Run verification** if anything doesn't work
+<!-- 4. **Use fast mode** (`--fast-mode`) for quicker results -->
+
 
 ---
 

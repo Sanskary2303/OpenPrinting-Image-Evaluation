@@ -73,7 +73,7 @@ BOTTLENECK DETECTED: imagetoraster causing 12% quality reduction
 
 ## Advanced Options
 
-### Fast Mode (90x faster)
+<!-- ### Fast Mode (90x faster)
 
 ```bash
 # Fedora/RHEL:
@@ -83,7 +83,7 @@ python filter_chain_test_pipeline.py Cups-PDF --fast-mode
 python filter_chain_test_pipeline.py PDF --fast-mode
 ```
 
-Perfect for quick checks - uses optimized algorithms.
+Perfect for quick checks - uses optimized algorithms. -->
 
 ### Test Different Printers
 
@@ -132,7 +132,7 @@ python filter_chain_test_pipeline.py Customer_Printer --verbose
 
 ```bash
 # Check which filter is slowest
-python filter_chain_test_pipeline.py Slow_Printer --fast-mode
+python filter_chain_test_pipeline.py Slow_Printer
 
 # Result: pdftoppm taking 80% of processing time
 # Solution: Optimize PDF processing settings
@@ -152,7 +152,7 @@ python filter_chain_test_pipeline.py New_Printer_Queue
 
 - **37 test images** processed through complete filter chain
 - **Each filter step analyzed** individually  
-- **Processing time**: 2-5 minutes (fast mode: 30 seconds)
+- **Processing time**: 2-5 minutes
 - **Step-by-step visualization** of quality changes
 
 ## Next Steps
