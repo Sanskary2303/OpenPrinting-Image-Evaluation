@@ -19,7 +19,7 @@ sudo dnf install cups-pdf
 lpstat -p Cups-PDF
 # Output: printer Cups-PDF is idle
 
-# Output files will be saved in: ~/PDF/
+# Output files will be saved in: ~/Desktop/
 ```
 
 #### **For Ubuntu/Debian:**
@@ -78,7 +78,7 @@ python print_quality_pipeline.py PDF         # Ubuntu/Debian
 
 ```bash
 # Use your printer queue name
-python filter_chain_test_pipeline.py Cups-PDF --fast-mode
+python filter_chain_test_pipeline.py Cups-PDF
 
 # X-ray vision: see what each filter does to your document
 ```
