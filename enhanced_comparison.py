@@ -727,7 +727,7 @@ class ImageComparator:
         texture_energy = np.mean(gradient_magnitude)
         
         # Texture directionality
-        gradient_direction = np.arctan2(grad_y, grad_x)
+        gradient_direction = np.arctan2(np.asarray(grad_y, dtype=np.float64), np.asarray(grad_x, dtype=np.float64))
         direction_histogram, _ = np.histogram(gradient_direction, bins=36, range=(-np.pi, np.pi))
         direction_uniformity = 1.0 - (entropy(direction_histogram + 1e-10) / np.log(36))
         
@@ -814,7 +814,7 @@ class ImageComparator:
         line_straightness_scores = []
         if lines is not None:
             for line in lines:
-                x1, y1, x2, y2 = line[0]
+                x1, y1, x2, y2 = line if len(line) == 4 else line[0]
                 line_length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
                 if line_length > 0:
                     # Perfect line would have straightness score of 1
@@ -901,9 +901,17 @@ class ImageComparator:
             color_variance = a_variance + b_variance
             
             # Method 5: Distinct color counting
-            # Reshape image for unique color counting
+            # Use a deterministic sample to avoid sorting every pixel in large images.
+            # This metric is informational only and is not used in the grayscale vote.
             reshaped = image.reshape(-1, 3)
-            unique_colors = len(np.unique(reshaped.view(np.dtype((np.void, reshaped.dtype.itemsize * reshaped.shape[1])))))
+            sample_size = min(100000, len(reshaped))
+            sample_indices = np.linspace(0, len(reshaped) - 1, sample_size, dtype=np.int64)
+            sampled_pixels = reshaped[sample_indices]
+            unique_colors = len(np.unique(
+                sampled_pixels.view(
+                    np.dtype((np.void, sampled_pixels.dtype.itemsize * sampled_pixels.shape[1]))
+                )
+            ))
             
             # For true grayscale, we expect R=G=B for all pixels
             identical_channels = np.sum((image[:,:,0] == image[:,:,1]) & 
@@ -1052,11 +1060,11 @@ class ImageComparator:
         
         # covariance matrix
         cov_matrix = np.cov(centered_points.T)
-        eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+        eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
         
         # Principal component (maximum variance)
         principal_component = eigenvectors[:, np.argmax(eigenvalues)]
-        angle = np.arctan2(principal_component[1], principal_component[0]) * 180 / np.pi
+        angle = np.arctan2(float(principal_component[1]), float(principal_component[0])) * 180 / np.pi
         
         # Convert to rotation from horizontal
         if angle > 45:

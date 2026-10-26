@@ -194,44 +194,69 @@ class FilterChainTestPipeline:
         return filter_chains
         
     def _discover_filter_chain(self, input_mime: str, mode: Dict[str, Any]) -> List[str]:
-        """Discover the filter chain CUPS would use for specific input type"""
-        
+        """Discover the filter chain CUPS would use for a specific input type."""
+
         try:
             with tempfile.NamedTemporaryFile(suffix='.tmp', delete=False) as temp_file:
                 temp_path = temp_file.name
-                
+
             try:
-                # Use cupsfilter with dry-run to discover filter chain
-                cmd = ['cupsfilter', '-p', self.printer_queue, '-m', input_mime]
-                
-                # Add mode-specific options
+                # Modern cupsfilter supports --list-filters instead of -v.
+                # Explicitly provide the input MIME type so CUPS does not
+                # need to infer it from the temporary file.
+                cmd = [
+                    'cupsfilter',
+                    '-p', self.printer_queue,
+                    '-i', input_mime,
+                    '--list-filters'
+                ]
+
+                # Use a valid output MIME type for filter-chain discovery.
+                if input_mime == 'image/png':
+                    cmd.extend(['-m', 'application/pdf'])
+                elif input_mime == 'application/pdf':
+                    cmd.extend(['-m', 'application/pdf'])
+                else:
+                    cmd.extend(['-m', 'application/pdf'])
+
+                # Add mode-specific options.
                 for option, value in mode.get('options', {}).items():
                     cmd.extend(['-o', f'{option}={value}'])
-                    
-                # Add debug flag to get filter chain info
-                cmd.extend(['-v', temp_path])
-                
-                env = os.environ.copy()
-                env['CUPS_DEBUG_LEVEL'] = '2'
-                
-                result = subprocess.run(cmd, capture_output=True, text=True, 
-                                      env=env, timeout=30)
-                
-                filters = self._parse_filter_chain_from_output(result.stderr)
-                
+
+                cmd.append(temp_path)
+
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+
+                filters = [
+                    line.strip()
+                    for line in result.stdout.splitlines()
+                    if line.strip()
+                ]
+
+                # cupsfilter may report errors on stderr.
+                if result.returncode != 0:
+                    self.logger.debug(
+                        f"cupsfilter failed for {input_mime}: {result.stderr.strip()}"
+                    )
+
                 return filters if filters else ['direct']
-                
+
             finally:
                 if os.path.exists(temp_path):
                     os.unlink(temp_path)
-                    
+
         except Exception as e:
             self.logger.debug(f"Filter chain discovery failed for {input_mime}: {e}")
             try:
                 return get_filter_chain(self.printer_queue, input_mime)
             except:
                 return ['direct']
-                
+
     def _parse_filter_chain_from_output(self, debug_output: str) -> List[str]:
         """Parse CUPS debug output to extract filter chain"""
         filters = []
@@ -415,7 +440,7 @@ class FilterChainTestPipeline:
         try:
             if filter_name in ['imagetoraster', 'imagetopdf']:
                 # Image conversion filters
-                cmd = [filter_name, '1', 'user', 'title', '1']
+                cmd = [os.path.join('/usr/lib/cups/filter', filter_name), '1', 'user', 'title', '1']
 
                 options = []
                 for option, value in mode.get('options', {}).items():
@@ -431,7 +456,7 @@ class FilterChainTestPipeline:
                         
             elif filter_name in ['pdftoraster', 'pstoraster']:
                 # PDF/PS to raster filters  
-                cmd = [filter_name, '1', 'user', 'title', '1']
+                cmd = [os.path.join('/usr/lib/cups/filter', filter_name), '1', 'user', 'title', '1']
                 
                 options = []
                 for option, value in mode.get('options', {}).items():
@@ -444,6 +469,34 @@ class FilterChainTestPipeline:
                                               stderr=subprocess.PIPE, timeout=60)
                         return result.returncode == 0
                         
+            elif filter_name in ['gstoraster', 'pwgtopdf', 'gziptoany', 'texttopdf']:
+                # Execute CUPS filters that are not image/PS-specific.
+                filter_path = os.path.join('/usr/lib/cups/filter', filter_name)
+                cmd = [filter_path, '1', 'user', 'title', '1']
+
+                options = []
+                for option, value in mode.get('options', {}).items():
+                    options.append(f'{option}={value}')
+                cmd.append(' '.join(options) if options else '')
+
+                with open(input_path, 'rb') as input_file:
+                    with open(output_path, 'wb') as output_file:
+                        result = subprocess.run(
+                            cmd,
+                            stdin=input_file,
+                            stdout=output_file,
+                            stderr=subprocess.PIPE,
+                            timeout=60
+                        )
+
+                if result.returncode != 0:
+                    self.logger.warning(
+                        f"Filter {filter_name} failed: "
+                        f"{result.stderr.decode(errors='replace').strip()}"
+                    )
+
+                return result.returncode == 0
+
             elif filter_name == 'direct':
                 shutil.copy2(input_path, output_path)
                 return True
@@ -533,7 +586,7 @@ class FilterChainTestPipeline:
             return results
             
         except Exception as e:
-            self.logger.error(f"Filter output comparison failed: {e}")
+            self.logger.exception("Filter output comparison failed")
             return {'error': str(e)}
             
     def _analyze_filter_effects(self, original_path: str, filtered_path: str, mode_name: str) -> Dict[str, Any]:
